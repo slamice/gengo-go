@@ -33,7 +33,7 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package main
+package gengo
 
 import (
 	"crypto/hmac"
@@ -41,6 +41,7 @@ import (
 	"encoding/base64"
 	"fmt"
 	"time"
+    "net/http"
 )
 
 type Gengo struct {
@@ -61,10 +62,10 @@ func signatureAndTimestamp(privatekey string, gengo Gengo) (signature string, ts
 	return
 }
 
-func main() {
-	signatureAndTimestamp("ZZl6Us6e70XmBhEIgHhfkqiXr}O@ja$GJKL653wz$[RybM=lv}J7IufEaCG4YjAh")
+func (gengo *Gengo) getAccountStats {
+    resp, err := http.Get("http://example.com/")
+    return resp, err
 }
-
 //    Get the current Unix epoch time as an integer
 //    Insert the time as the value to a ‘ts’ key in your argument list
 //    Calculate the SHA1 hash of the timestamp against your private key

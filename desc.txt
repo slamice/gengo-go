@@ -27,12 +27,12 @@ struct {
     sandbox    bool
 }
 
-And then we're going to try to authenticate.
+And then we're going to try to authenticate. We're pretty uninque as far as I know for having people create a signature to send along with the current time.
 
 
 
 
-
+I researched a [few](https://github.com/bradfitz/gomemcache) [other](https://github.com/kurrik/twittergo/blob/master/twittergo.go) [client](https://github.com/samalba/dockerclient) [libraries](https://github.com/fiorix/go-redis) on the best way to send and receieve
 
 marshalling + unmarshalling json
 

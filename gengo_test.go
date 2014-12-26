@@ -1,18 +1,20 @@
 package gengo
 
 import (
-	"os"
+	"fmt"
 	"testing"
 )
 
 var (
-	pubKey  = os.Getenv("")
-	privKey = os.Getenv("")
-	gengo   = gengo{pubKey, privKey, true}
+	pubKey  = ""
+	privKey = ""
+	gengo   = Gengo{pubKey, privKey, false}
 )
 
 func TestGetAccountStats(t *testing.T) {
-	stuff, err := gengo.getAccountStats()
-	t.Log("Hello %d\n", err)
-	t.Log("Hello %d\n", stuff)
+	body := gengo.getAccountStats()
+
+	body2 := string(body)
+	t.Log("Hello %d\n", body2)
+	fmt.Printf("%d", body2)
 }

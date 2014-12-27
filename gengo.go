@@ -4,9 +4,11 @@ import (
 	"crypto/hmac"
 	"crypto/sha1"
 	"encoding/hex"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
+	"net/url"
 	"strconv"
 	"time"
 )
@@ -24,10 +26,12 @@ type GengoError struct {
 }
 
 func (g *Gengo) BaseURL() string {
+	s := "http://sandbox.api.gengo.com/v2/"
+
 	if g.sandbox == false {
-		return "https://api.gengo.com/v2/"
+		s = "http://api.gengo.com/v2/"
 	}
-	return "https://sandbox.api.gengo.com/v2/"
+	return s
 }
 
 func ComputeHmacSha1Hex(privatekey string, timestamp string) string {
@@ -38,20 +42,29 @@ func ComputeHmacSha1Hex(privatekey string, timestamp string) string {
 
 func signatureAndTimestamp(privatekey string) (timestamp string, signature string) {
 	ts := strconv.FormatInt(time.Now().Unix(), 10)
+	fmt.Println(ts)
 	sig := ComputeHmacSha1Hex(privatekey, ts)
-	return sig, ts
+	return ts, sig
 }
 
-func handleAuthentication() {
-
-}
-
-func getRequest(url string) (body []byte) {
+func getRequest(subpath string) (body []byte) {
 
 	client := &http.Client{}
 
-	var ts, signature = signatureAndTimestamp(gengo.privatekey)
-	req, err := http.NewRequest("GET", url, nil)
+	ts, signature := signatureAndTimestamp(gengo.privatekey)
+
+	// Set URL values
+	v := url.Values{}
+	v.Set("api_key", gengo.publickey)
+	v.Set("api_sig", signature)
+	v.Set("ts", ts)
+
+	u := gengo.BaseURL() + subpath + "?" + v.Encode()
+
+	fmt.Println(u)
+
+	req, err := http.NewRequest("GET", u, nil)
+
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -72,7 +85,7 @@ func getRequest(url string) (body []byte) {
 }
 
 func (g *Gengo) getAccountStats() (body []byte) {
-	return getRequest(g.BaseURL() + "account/stats")
+	return getRequest("account/stats")
 }
 
 //    Get the current Unix epoch time as an integer

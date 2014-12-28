@@ -4,64 +4,76 @@ import (
 	"crypto/hmac"
 	"crypto/sha1"
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"net/url"
 	"strconv"
+	"strings"
 	"time"
 )
 
+var (
+	SandboxUrl    = "http://sandbox.api.gengo.com/v2/"
+	ProductionUrl = "http://api.gengo.com/v2/"
+)
+
 type Gengo struct {
-	publickey  string
-	privatekey string
-	sandbox    bool
+	Publickey  string
+	Privatekey string
+	Sandbox    bool
 }
 
-type GengoError struct {
-	err  string
-	code int
-	body string
+type GengoResponse struct {
+	Err      *ErrorResponse
+	Opstat   string                 `json:"opstat"`
+	Response map[string]interface{} `json:"response"`
+}
+
+type ErrorResponse struct {
+	Code int    `json:"code"`
+	Msg  string `json:"msg"`
 }
 
 func (g *Gengo) BaseURL() string {
-	s := "http://sandbox.api.gengo.com/v2/"
+	s := SandboxUrl
 
-	if g.sandbox == false {
-		s = "http://api.gengo.com/v2/"
+	if g.Sandbox == false {
+		s = ProductionUrl
 	}
+
 	return s
 }
 
+// Create signature based on Private Key and Timestamp
 func ComputeHmacSha1Hex(privatekey string, timestamp string) string {
 	h := hmac.New(sha1.New, []byte(privatekey))
 	h.Write([]byte(timestamp))
 	return hex.EncodeToString(h.Sum(nil))
 }
 
+// Calculate timestamp and signature
 func signatureAndTimestamp(privatekey string) (timestamp string, signature string) {
 	ts := strconv.FormatInt(time.Now().Unix(), 10)
-	fmt.Println(ts)
 	sig := ComputeHmacSha1Hex(privatekey, ts)
 	return ts, sig
 }
 
-func getRequest(subpath string) (body []byte) {
+func getRequest(subpath string) (r *GengoResponse) {
 
 	client := &http.Client{}
 
-	ts, signature := signatureAndTimestamp(gengo.privatekey)
+	ts, signature := signatureAndTimestamp(gengo.Privatekey)
 
-	// Set URL values
 	v := url.Values{}
-	v.Set("api_key", gengo.publickey)
+	v.Set("api_key", gengo.Publickey)
 	v.Set("api_sig", signature)
 	v.Set("ts", ts)
 
-	u := gengo.BaseURL() + subpath + "?" + v.Encode()
-
-	fmt.Println(u)
+	urlList := []string{gengo.BaseURL(), subpath, "?", v.Encode()}
+	u := strings.Join(urlList, "")
 
 	req, err := http.NewRequest("GET", u, nil)
 
@@ -76,15 +88,24 @@ func getRequest(subpath string) (body []byte) {
 	}
 
 	defer resp.Body.Close()
-	body, err = ioutil.ReadAll(resp.Body)
+	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		log.Fatal(err)
 	}
 
+	fmt.Printf(subpath)
+
+	err = json.Unmarshal(body, &r)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	fmt.Printf(r.Opstat)
+
 	return
 }
 
-func (g *Gengo) getAccountStats() (body []byte) {
+func (g *Gengo) getAccountStats() (r *GengoResponse) {
 	return getRequest("account/stats")
 }
 
